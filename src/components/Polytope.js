@@ -1,39 +1,62 @@
 import Select from 'react-select';
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import PolytopeChart from "./PolytopeChart.js";
 
-// List of invariants possible
+let first_run = true;
+const API_URL = "http://localhost:8080/endpoints"
+
+// List of possible invariants
 const INVARIANTS = [
     {value: "avcol", label: "avcol"},
-    {value: "eci", label: "eci"},
-    {value: "numcol", label: "numcol"}
 ];
 
-// List of number vertices possible
+// List of possible number of vertices
 const NUMBERS = [
-    {value : "1", label : "1"},
-    {value : "2", label : "2"},
-    {value : "3", label : "3"},
-    {value : "4", label : "4"},
-    {value : "5", label : "5"},
-    {value : "6", label : "6"},
-    {value : "7", label : "7"},
-    {value : "8", label : "8"},
-    {value : "9", label : "9"},
+    {value : "1", label : "1"}
 ]
 
 // List of possible colors
 const COLORS = [
     {value: "mult", label: "mult"},
-    {value: "chi", label: "chi"}
 ];
+
+async function get_params() {
+    //if (!first_run) return
+    //first_run = false
+    return await fetch(API_URL, {method: "GET"})
+        .then(response => response.json())
+        .then(data => [
+            data.invariants.map(inv => ({value: inv.name, label: inv.name})),
+            data.graph_sizes.map(size => ({value: size.toString(), label: size.toString()})),
+            data.colors.map(color => ({value: color.name, label: color.name}))
+        ])
+
+}
 
 // Component's core
 export default function Polytope(props) {
+    const [invariants, setInvariants] = useState(INVARIANTS);
+    const [numbers, setNumbers] = useState(NUMBERS);
+    const [colors, setColors] = useState(COLORS);
+
     const [invariant, setInvariant] = useState(INVARIANTS[0]);
     const [number, setNumber] = useState(NUMBERS[0]);
     const [color, setColor] = useState(COLORS[0]);
     const [submit, setSubmit] = useState(false);
+
+    useEffect(() => {
+        if (!first_run) return;
+        first_run = false;
+        get_params()
+            .then(([inv, nbrs, colors]) => {
+                setInvariants(inv);
+                setInvariant(inv[0]);
+                setNumbers(nbrs);
+                setNumber(nbrs[0]);
+                setColors(colors);
+                setColor(colors[0]);
+            })
+    }, [])
 
     let currentInvariant = invariant.value;
     let currentNumber = number.value;
@@ -81,7 +104,7 @@ export default function Polytope(props) {
                     <Select
                         defaultValue={invariant}
                         onChange={handleChangeInvariant}
-                        options={INVARIANTS}
+                        options={invariants}
                     />
                 </label>
                 <br/>
@@ -90,7 +113,7 @@ export default function Polytope(props) {
                     <Select
                         defaultValue={number}
                         onChange={handleChangeNumber}
-                        options={NUMBERS}
+                        options={numbers}
                     />
                 </label>
                 <br/>
@@ -99,7 +122,7 @@ export default function Polytope(props) {
                     <Select
                         defaultValue={color}
                         onChange={handleChangeMeasure}
-                        options={COLORS}/>
+                        options={colors}/>
                 </label>
             </form>
             <button onClick={clickSubmit}> Soumettre </button>

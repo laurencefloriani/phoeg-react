@@ -21,20 +21,41 @@ const COLORS = [
 ];
 
 async function get_params() {
-    //if (!first_run) return
-    //first_run = false
     return await fetch(API_URL, {method: "GET"})
         .then(response => response.json())
-        .then(data => [
-            data.invariants.map(inv => ({value: inv.name, label: inv.name})),
-            data.graph_sizes.map(size => ({value: size.toString(), label: size.toString()})),
-            data.colors.map(color => ({value: color.name, label: color.name}))
-        ])
+        .then(data => {
+            const endpoints = []
+            for (const endpt in data.endpoints) {
+                if (data.endpoints.hasOwnProperty(endpt)) {
+                    endpoints.push(data.endpoints[endpt])
+                }
+            }
+            return [
+                endpoints.map(endpt => ({value: endpt, label: endpt.name})),
+                data.invariants.map(inv => ({value: inv.name, label: inv.name})),
+                data.graph_sizes.map(size => ({value: size.toString(), label: size.toString()})),
+                data.colors.map(color => ({value: color.name, label: color.name}))
+            ]
+        })
+}
 
+function getDefaultValue(type) {
+    switch (type) {
+        case "number":
+            return 0;
+        case "string":
+            return "";
+        default:
+            console.error("Type " + type + " not supported.");
+            return null;
+    }
 }
 
 // Component's core
 export default function Polytope(props) {
+    const [endpoints, setEndpoints] = useState([]); // No endpoints by default, then query from API
+    const [endpoint, setEndpoint] = useState(null);
+
     const [invariants, setInvariants] = useState(INVARIANTS);
     const [numbers, setNumbers] = useState(NUMBERS);
     const [colors, setColors] = useState(COLORS);
@@ -48,7 +69,9 @@ export default function Polytope(props) {
         if (!first_run) return;
         first_run = false;
         get_params()
-            .then(([inv, nbrs, colors]) => {
+            .then(([endpoints, inv, nbrs, colors]) => {
+                console.debug([endpoints, inv, nbrs, colors]);
+                setEndpoints(endpoints);
                 setInvariants(inv);
                 setInvariant(inv[0]);
                 setNumbers(nbrs);
@@ -61,6 +84,13 @@ export default function Polytope(props) {
     let currentInvariant = invariant.value;
     let currentNumber = number.value;
     let currentColor = color.value;
+
+    const handleChangePolytopType = (newPolytopType) => {
+        console.log(newPolytopType);
+        setEndpoint(newPolytopType);
+        setSubmit(false);
+        return true;
+    }
 
     const handleChangeInvariant = (newInvariant) => {
         setInvariant(newInvariant);
@@ -95,9 +125,68 @@ export default function Polytope(props) {
         }
     }
 
+    const RenderOneQuestion = (label, defaultValue, onChange, options) => {
+        return (
+            <label>
+                {label}
+                <Select
+                    //defaultValue={defaultValue}
+                    onChange={onChange}
+                    options={options}
+                />
+            </label>
+        );
+    }
+
+    const parseQuestion = (props, question) => {
+        let options = []
+        const properties = props[question];
+        if (properties.hasOwnProperty("anyOf")) {
+            properties.anyOf.forEach(item => {
+                const possible_value = item.const;
+                const type = item.type;
+                options.push(possible_value);
+            })
+            return [properties.toString(), options[0], null, options]; // todo options[0] ? len : ""
+        } else if (properties.hasOwnProperty("type")) {
+            const defaultValue = getDefaultValue(properties.type);
+            return [properties.toString(), defaultValue, null, null];
+        } else {
+            console.error("Could not parse " + properties);
+            return null;
+        }
+    }
+
+    const RenderMultipleQuestions = () => {
+        let allQuestions = [];
+        endpoints.forEach(endpoint => {
+            const props = endpoint.params.properties
+            for (const question in props) {
+                if (props.hasOwnProperty(question)) {
+                    const [label, defaultValue, onChange, options] = parseQuestion(props, question);
+                    allQuestions.push(RenderOneQuestion(
+                        RenderOneQuestion(label, defaultValue, onChange, options)
+                    ));
+                }
+            }
+            allQuestions.push(<br/>)
+        })
+        return allQuestions;
+    }
+
     return (
         <div>
             <h3> Polytope {props.num}</h3>
+            <form>
+                <label>
+                    Quel type de polytopes souhaitez-vous étudier ?
+                    <Select
+                        //defaultValue={endpoints}
+                        onChange={handleChangePolytopType}
+                        options={endpoints}
+                    />
+                </label>
+            </form>
             <form>
                 <label>
                     Quel invariant souhaitez-vous étudier ?

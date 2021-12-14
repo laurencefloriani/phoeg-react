@@ -5,22 +5,9 @@ import PolytopeChart from "./PolytopeChart.js";
 let first_run = true;
 const API_URL = "http://localhost:8080/endpoints"
 
-// List of possible invariants
-const INVARIANTS = [
-    {value: "avcol", label: "avcol"},
-];
+let form_values = {}
 
-// List of possible number of vertices
-const NUMBERS = [
-    {value : "1", label : "1"}
-]
-
-// List of possible colors
-const COLORS = [
-    {value: "mult", label: "mult"},
-];
-
-async function get_params() {
+async function get_endpoints() {
     return await fetch(API_URL, {method: "GET"})
         .then(response => response.json())
         .then(data => {
@@ -30,12 +17,7 @@ async function get_params() {
                     endpoints.push(data.endpoints[endpt])
                 }
             }
-            return [
-                endpoints.map(endpt => ({value: endpt, label: endpt.name})),
-                data.invariants.map(inv => ({value: inv.name, label: inv.name})),
-                data.graph_sizes.map(size => ({value: size.toString(), label: size.toString()})),
-                data.colors.map(color => ({value: color.name, label: color.name}))
-            ]
+            return endpoints.map(endpt => ({value: endpt, label: endpt.name}));
         })
 }
 
@@ -56,61 +38,33 @@ export default function Polytope(props) {
     const [endpoints, setEndpoints] = useState([]); // No endpoints by default, then query from API
     const [endpoint, setEndpoint] = useState(null);
 
-    const [invariants, setInvariants] = useState(INVARIANTS);
-    const [numbers, setNumbers] = useState(NUMBERS);
-    const [colors, setColors] = useState(COLORS);
-
-    const [invariant, setInvariant] = useState(INVARIANTS[0]);
-    const [number, setNumber] = useState(NUMBERS[0]);
-    const [color, setColor] = useState(COLORS[0]);
     const [submit, setSubmit] = useState(false);
 
     useEffect(() => {
         if (!first_run) return;
         first_run = false;
-        get_params()
-            .then(([endpoints, inv, nbrs, colors]) => {
-                console.debug([endpoints, inv, nbrs, colors]);
+        get_endpoints()
+            .then((endpoints) => {
                 setEndpoints(endpoints);
-                setInvariants(inv);
-                setInvariant(inv[0]);
-                setNumbers(nbrs);
-                setNumber(nbrs[0]);
-                setColors(colors);
-                setColor(colors[0]);
             })
     }, [])
 
-    let currentInvariant = invariant.value;
-    let currentNumber = number.value;
-    let currentColor = color.value;
-
-    const handleChangePolytopType = (newPolytopType) => {
-        console.log(newPolytopType);
-        setEndpoint(newPolytopType);
+    const handleChangePolytopeType = (newPolytopeType) => {
+        setEndpoint(newPolytopeType);
         setSubmit(false);
         return true;
     }
 
-    const handleChangeInvariant = (newInvariant) => {
-        setInvariant(newInvariant);
-        currentInvariant = newInvariant.value;
-        setSubmit(false);
-        return true;
+    const handleFormChangeGenerator = (question) => {
+        return (newValue, actionMeta) => handleFormChange(question, newValue, actionMeta);
     }
 
-    const handleChangeNumber = (newNumber) => {
-        setNumber(newNumber);
-        currentNumber = newNumber.value;
+    const handleFormChange = (question, newValue, actionMeta) => {
+        console.debug(question);
+        console.debug(newValue);
+        const [, setter] = form_values[question];
+        setter(newValue);
         setSubmit(false);
-        return true;
-    }
-
-    const handleChangeMeasure = (newColor) => {
-        setColor(newColor);
-        currentColor = newColor.value;
-        setSubmit(false);
-        return true;
     }
 
     const clickSubmit = () => {
@@ -118,22 +72,27 @@ export default function Polytope(props) {
     }
 
     const RenderPolytopeChart = () => {
+        console.log("Rendering Polytope with parameters: " + form_values);
         if (submit) {
-            return <PolytopeChart invariantName={currentInvariant} numberVertices={currentNumber} invariantColor={currentColor}/>;
+            return <PolytopeChart invariantName={"avcol"} numberVertices={5}
+                                  invariantColor={"mult"}/>;
         } else {
             return null;
         }
     }
 
     const RenderOneQuestion = (label, defaultValue, onChange, options) => {
+        // Create a setter and value for this input.
+        form_values[label] = useState(null);        // TODO use question name instead of label.
         return (
             <label>
                 {label}
                 <Select
-                    defaultValue={defaultValue && defaultValue}
-                    onChange={onChange && onChange}
-                    options={options && options}
+                    defaultValue={defaultValue}     // crashes if null
+                    onChange={onChange}
+                    options={options}               // crashes if null
                 />
+                <br/>
             </label>
         );
     }
@@ -147,11 +106,11 @@ export default function Polytope(props) {
                 const type = item.type;
                 options.push({label: possible_value, value: possible_value});
             })
-            return [question, options[0], null, options]; // todo options[0] ? len : ""
+            return [question, options[0], handleFormChangeGenerator(question), options]; // todo options[0] ? len : ""
         } else if (properties.hasOwnProperty("type")) {
             const val = getDefaultValue(properties.type);
             const defaultValue = {label: val, value: val};
-            return [question, null, null, null];
+            return [question, null, handleFormChangeGenerator(question), null];
         } else {
             console.error("Could not parse " + properties);
             return null;
@@ -160,25 +119,21 @@ export default function Polytope(props) {
 
     const RenderMultipleQuestions = () => {
         let allQuestions = [];
-        console.debug(endpoint);
         if (!endpoint || !endpoint.value) {
             return allQuestions;
         }
-        console.debug(endpoint.value);
+
         const properties = endpoint.value.params.properties;
-        console.debug(properties);
 
         for (const question in properties) {
             if (properties.hasOwnProperty(question)) {
-                console.debug(question);
                 const [label, defaultValue, onChange, options] = parseQuestion(properties, question);
+
                 allQuestions.push(RenderOneQuestion(
                     RenderOneQuestion(label, defaultValue, onChange, options)
                 ));
             }
         }
-        //allQuestions.push(<br/>)
-
         return allQuestions;
     }
 
@@ -190,7 +145,7 @@ export default function Polytope(props) {
                     Quel type de polytopes souhaitez-vous étudier ?
                     <Select
                         //defaultValue={endpoints}
-                        onChange={handleChangePolytopType}
+                        onChange={handleChangePolytopeType}
                         options={endpoints}
                     />
                 </label>
@@ -198,8 +153,8 @@ export default function Polytope(props) {
             <form>
                 <RenderMultipleQuestions/>
             </form>
-            <button onClick={clickSubmit}> Soumettre </button>
-            <RenderPolytopeChart />
+            <button onClick={clickSubmit}> Soumettre</button>
+            <RenderPolytopeChart/>
         </div>
     )
 }

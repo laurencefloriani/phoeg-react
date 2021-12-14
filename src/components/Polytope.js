@@ -52,8 +52,28 @@ export default function Polytope(props) {
         console.debug(question);
         console.debug(newValue);
         const [, setter] = form_values[question];
-        setter(newValue);
+        setter(newValue.value);
         setSubmit(false);
+        console.debug(form_values[question]);
+    }
+
+    const handleInputChangeGenerator = (question, type) => {
+        return (event) => handleInputChange(question, type, event);
+    }
+
+    const handleInputChange = (question, type, event) =>  {
+        console.log(question, event.target.value);
+        const [, setter] = form_values[question];
+        if (type === 'number') {
+            const number = Number.parseInt(event.target.value); // TODO better handle invalid numbers
+            if (!isNaN(number)) {
+                setter(number);
+            }
+        } else {
+            setter(event.target.value);
+        }
+        setSubmit(false);
+        console.debug(form_values[question]);
     }
 
     const clickSubmit = () => {
@@ -72,15 +92,41 @@ export default function Polytope(props) {
 
     const RenderOneQuestion = (question, label, defaultValue, onChange, options) => {
         // Create a setter and value for this input.
-        form_values[question] = useState(null);
+        const [value, setter] = useState(defaultValue);
+        form_values[question] = [value, setter];
+
         return (
             <label>
                 {label}
-                <Select
-                    defaultValue={defaultValue}     // crashes if null
-                    onChange={onChange}
-                    options={options}               // crashes if null
-                />
+                {!!options && (
+                    <Select
+                        defaultValue={defaultValue}     // crashes if null
+                        onChange={onChange}
+                        options={options}               // crashes if null
+                    />
+                )}
+                {!options && typeof defaultValue === 'number' && (
+                    <div>
+                        <br/>
+                        <input
+                            name={question}
+                            type="number"
+                            value={value}
+                            onChange={handleInputChangeGenerator(question, 'number')}
+                        />
+                    </div>
+                )}
+                {!options && typeof defaultValue === 'string' && (
+                    <div>
+                        <br/>
+                        <input
+                            name={question}
+                            type="text"
+                            value={value}
+                            onChange={handleInputChangeGenerator(question, 'string')}
+                        />
+                    </div>
+                )}
                 <br/>
             </label>
         );

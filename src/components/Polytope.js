@@ -2,10 +2,8 @@ import Select from 'react-select';
 import React, {useState, useEffect} from "react";
 import PolytopeChart from "./PolytopeChart.js";
 
-let first_run = true;
 const API_URL = "http://localhost:8080/endpoints"
 
-let form_values = {}
 
 async function get_endpoints() {
     return await fetch(API_URL, {method: "GET"})
@@ -23,6 +21,9 @@ async function get_endpoints() {
 
 // Component's core
 export default function Polytope(props) {
+    let first_run = true
+    let form_values = {}
+
     const [endpoints, setEndpoints] = useState([]); // No endpoints by default, then query from API
     const [endpoint, setEndpoint] = useState(null);
 

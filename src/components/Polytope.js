@@ -21,18 +21,6 @@ async function get_endpoints() {
         })
 }
 
-function getDefaultValue(type) {
-    switch (type) {
-        case "number":
-            return 0;
-        case "string":
-            return "";
-        default:
-            console.error("Type " + type + " not supported.");
-            return null;
-    }
-}
-
 // Component's core
 export default function Polytope(props) {
     const [endpoints, setEndpoints] = useState([]); // No endpoints by default, then query from API
@@ -81,9 +69,9 @@ export default function Polytope(props) {
         }
     }
 
-    const RenderOneQuestion = (label, defaultValue, onChange, options) => {
+    const RenderOneQuestion = (question, label, defaultValue, onChange, options) => {
         // Create a setter and value for this input.
-        form_values[label] = useState(null);        // TODO use question name instead of label.
+        form_values[question] = useState(null);
         return (
             <label>
                 {label}
@@ -100,17 +88,19 @@ export default function Polytope(props) {
     const parseQuestion = (props, question) => {
         let options = []
         const properties = props[question];
+
+        const description = properties.description;
+        const defaultValue = properties.default;
+
         if (properties.hasOwnProperty("anyOf")) {
             properties.anyOf.forEach(item => {
                 const possible_value = item.const;
                 const type = item.type;
                 options.push({label: possible_value, value: possible_value});
             })
-            return [question, options[0], handleFormChangeGenerator(question), options]; // todo options[0] ? len : ""
+            return [question + ": " + description, defaultValue, handleFormChangeGenerator(question), options]; // todo options[0] ? len : ""
         } else if (properties.hasOwnProperty("type")) {
-            const val = getDefaultValue(properties.type);
-            const defaultValue = {label: val, value: val};
-            return [question, null, handleFormChangeGenerator(question), null];
+            return [question + ": " + description, defaultValue, handleFormChangeGenerator(question), null];
         } else {
             console.error("Could not parse " + properties);
             return null;
@@ -129,9 +119,9 @@ export default function Polytope(props) {
             if (properties.hasOwnProperty(question)) {
                 const [label, defaultValue, onChange, options] = parseQuestion(properties, question);
 
-                allQuestions.push(RenderOneQuestion(
-                    RenderOneQuestion(label, defaultValue, onChange, options)
-                ));
+                allQuestions.push(
+                    RenderOneQuestion(question, label, defaultValue, onChange, options)
+                )
             }
         }
         return allQuestions;

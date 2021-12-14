@@ -130,9 +130,9 @@ export default function Polytope(props) {
             <label>
                 {label}
                 <Select
-                    //defaultValue={defaultValue}
-                    onChange={onChange}
-                    options={options}
+                    defaultValue={defaultValue && defaultValue}
+                    onChange={onChange && onChange}
+                    options={options && options}
                 />
             </label>
         );
@@ -145,12 +145,13 @@ export default function Polytope(props) {
             properties.anyOf.forEach(item => {
                 const possible_value = item.const;
                 const type = item.type;
-                options.push(possible_value);
+                options.push({label: possible_value, value: possible_value});
             })
-            return [properties.toString(), options[0], null, options]; // todo options[0] ? len : ""
+            return [question, options[0], null, options]; // todo options[0] ? len : ""
         } else if (properties.hasOwnProperty("type")) {
-            const defaultValue = getDefaultValue(properties.type);
-            return [properties.toString(), defaultValue, null, null];
+            const val = getDefaultValue(properties.type);
+            const defaultValue = {label: val, value: val};
+            return [question, null, null, null];
         } else {
             console.error("Could not parse " + properties);
             return null;
@@ -159,18 +160,25 @@ export default function Polytope(props) {
 
     const RenderMultipleQuestions = () => {
         let allQuestions = [];
-        endpoints.forEach(endpoint => {
-            const props = endpoint.params.properties
-            for (const question in props) {
-                if (props.hasOwnProperty(question)) {
-                    const [label, defaultValue, onChange, options] = parseQuestion(props, question);
-                    allQuestions.push(RenderOneQuestion(
-                        RenderOneQuestion(label, defaultValue, onChange, options)
-                    ));
-                }
+        console.debug(endpoint);
+        if (!endpoint || !endpoint.value) {
+            return allQuestions;
+        }
+        console.debug(endpoint.value);
+        const properties = endpoint.value.params.properties;
+        console.debug(properties);
+
+        for (const question in properties) {
+            if (properties.hasOwnProperty(question)) {
+                console.debug(question);
+                const [label, defaultValue, onChange, options] = parseQuestion(properties, question);
+                allQuestions.push(RenderOneQuestion(
+                    RenderOneQuestion(label, defaultValue, onChange, options)
+                ));
             }
-            allQuestions.push(<br/>)
-        })
+        }
+        //allQuestions.push(<br/>)
+
         return allQuestions;
     }
 
@@ -188,31 +196,7 @@ export default function Polytope(props) {
                 </label>
             </form>
             <form>
-                <label>
-                    Quel invariant souhaitez-vous étudier ?
-                    <Select
-                        defaultValue={invariant}
-                        onChange={handleChangeInvariant}
-                        options={invariants}
-                    />
-                </label>
-                <br/>
-                <label>
-                    Combien de sommet souhaitez-vous pour les graphes ?
-                    <Select
-                        defaultValue={number}
-                        onChange={handleChangeNumber}
-                        options={numbers}
-                    />
-                </label>
-                <br/>
-                <label>
-                    Quelle mesure voulez-vous employer pour colorer les points ?
-                    <Select
-                        defaultValue={color}
-                        onChange={handleChangeMeasure}
-                        options={colors}/>
-                </label>
+                <RenderMultipleQuestions/>
             </form>
             <button onClick={clickSubmit}> Soumettre </button>
             <RenderPolytopeChart />

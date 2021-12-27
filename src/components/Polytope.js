@@ -1,5 +1,6 @@
 import Select from 'react-select';
 import React, {useState, useEffect} from "react";
+import Form from '@rjsf/material-ui';
 import PolytopeChart from "./PolytopeChart.js";
 
 const API_URL = "http://localhost:8080/endpoints"
@@ -90,88 +91,21 @@ export default function Polytope(props) {
         }
     }
 
-    const RenderOneQuestion = (question, label, defaultValue, onChange, options) => {
-        // Create a setter and value for this input.
-        const [value, setter] = useState(defaultValue);
-        form_values[question] = [value, setter];
-
-        return (
-            <label>
-                {label}
-                {!!options && (
-                    <Select
-                        defaultValue={defaultValue}     // crashes if null
-                        onChange={onChange}
-                        options={options}               // crashes if null
-                    />
-                )}
-                {!options && typeof defaultValue === 'number' && (
-                    <div>
-                        <br/>
-                        <input
-                            name={question}
-                            type="number"
-                            value={value}
-                            onChange={handleInputChangeGenerator(question, 'number')}
-                        />
-                    </div>
-                )}
-                {!options && typeof defaultValue === 'string' && (
-                    <div>
-                        <br/>
-                        <input
-                            name={question}
-                            type="text"
-                            value={value}
-                            onChange={handleInputChangeGenerator(question, 'string')}
-                        />
-                    </div>
-                )}
-                <br/>
-            </label>
-        );
+    function onFormChange(event) {
+        console.log("---Form changed---");
+        console.log(event.formData);
     }
 
-    const parseQuestion = (props, question) => {
-        let options = []
-        const properties = props[question];
-
-        const description = properties.description;
-        const defaultValue = properties.default;
-
-        if (properties.hasOwnProperty("anyOf")) {
-            properties.anyOf.forEach(item => {
-                const possible_value = item.const;
-                const type = item.type;
-                options.push({label: possible_value, value: possible_value});
-            })
-            return [question + ": " + description, defaultValue, handleFormChangeGenerator(question), options]; // todo options[0] ? len : ""
-        } else if (properties.hasOwnProperty("type")) {
-            return [question + ": " + description, defaultValue, handleFormChangeGenerator(question), null];
-        } else {
-            console.error("Could not parse " + properties);
-            return null;
-        }
+    function onFormSubmit(event) {
+        console.log("---Form submitted---");
+        console.log(event.formData);
     }
 
-    const RenderMultipleQuestions = () => {
-        let allQuestions = [];
-        if (!endpoint || !endpoint.value) {
-            return allQuestions;
-        }
 
-        const properties = endpoint.value.params.properties;
-
-        for (const question in properties) {
-            if (properties.hasOwnProperty(question)) {
-                const [label, defaultValue, onChange, options] = parseQuestion(properties, question);
-
-                allQuestions.push(
-                    RenderOneQuestion(question, label, defaultValue, onChange, options)
-                )
-            }
-        }
-        return allQuestions;
+    const uiSchema = {
+        "max_graph_size": {
+            "ui:widget": "range"
+        },
     }
 
     return (
@@ -187,9 +121,19 @@ export default function Polytope(props) {
                     />
                 </label>
             </form>
-            <form>
-                <RenderMultipleQuestions/>
-            </form>
+            {!!endpoint &&
+                <Form
+                    schema={endpoint.value.params}
+                    uiSchema={uiSchema}
+                    onChange={onFormChange}
+                    onSubmit={onFormSubmit}
+                    onError={console.log("errors")}/>
+            }
+            {
+                //<form>
+                //    <RenderMultipleQuestions/>
+                //</form>
+            }
             <button onClick={clickSubmit}> Soumettre</button>
             <RenderPolytopeChart/>
         </div>

@@ -13,26 +13,41 @@ export default function PolytopeChart(props) {
     const [invariantValue, setInvariantValue] = useState(0);
     const [selected, setSelected] = useState(false);
 
-    useEffect( () => {
-        let pathEnv = "assets/data_" + props.invariantName + "/enveloppes/enveloppe-" + props.numberVertices + ".json";
-        let pathPoints = "assets/data_" + props.invariantName + "/points/points-" + props.numberVertices + ".json";
-        fetch(pathEnv, {headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}})
-            .then(function (response) {
-                return response.json();
-            })
-            .then(function (myJson) {
-                const envelope = readEnvelope(myJson);
-                fetch(pathPoints, {headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}})
-                    .then(function (response) {
-                        return response.json();
-                    })
-                    .then(function (myJson) {
-                        const points = readPoints(myJson, props.invariantName, props.invariantColor);
-                        points.push({type: 'line', label: "Envelope", borderColor: "0xFFFFFF", data: envelope}); // Ajoute l'enveloppe à la suite des points
-                        setData({datasets: points});
-                    })
-            });
-    },
+    useEffect( async () => {
+            const graphPath = props.graphPath.value.path;
+            let envelope_request = new URL(`http://localhost:8080${graphPath}/polytope`);
+            envelope_request.searchParams.append("max_graph_size", props.numberVertices);
+            envelope_request.searchParams.append("invariants", props.invariantName);
+            envelope_request.searchParams.append("invariants", props.invariantColor);
+            console.debug("Fetching", envelope_request.toString());
+
+
+            // First fetch the envelopes
+            const envelope = await fetch(envelope_request.toString())
+                .then(response => response.json())
+                .then(data => {
+                    console.debug("Fetched", envelope_request.toString());
+                    return readEnvelope(data);
+                });
+
+            let points_request = new URL(`http://localhost:8080${graphPath}/points`);
+            points_request.searchParams.append("max_graph_size", props.numberVertices);
+            points_request.searchParams.append("invariants", props.invariantName);
+            points_request.searchParams.append("invariants", props.invariantColor);
+            console.debug("Fetching", points_request.toString());
+
+            // then fetch the points
+            const points = await fetch(points_request.toString())
+                .then(response => response.json())
+                .then(data => {
+                    console.debug("Fetched", points_request.toString());
+                    return readPoints(data);
+                });
+
+            points.push({type: 'line', label: "Envelope", borderColor: "0xFFFFFF", data: envelope});
+            setData({datasets: points});
+
+        },
         [props.invariantName, props.invariantColor, props.numberVertices]);
 
     const options = {

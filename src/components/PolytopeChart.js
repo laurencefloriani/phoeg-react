@@ -9,8 +9,8 @@ export default function PolytopeChart(props) {
             {type: 'bubble', data: [{x: 0, y: 0, r: 5}]},
             {type: 'line', data: [{x: 0, y: 0}]}
         ]});
-    const [numberEdges, setNumberEdges] = useState(0);
-    const [invariantValue, setInvariantValue] = useState(0);
+    const [invariantYValue, setInvariantYValue] = useState(0);
+    const [invariantXValue, setInvariantXValue] = useState(0);
     const [selected, setSelected] = useState(false);
 
     useEffect( async () => {
@@ -79,8 +79,8 @@ export default function PolytopeChart(props) {
             let datasetIndex = elt[0]["datasetIndex"];
             let index = elt[0]["index"];
             let point = data["datasets"][datasetIndex]["data"][index];
-            setNumberEdges(point["y"]);
-            setInvariantValue(point["x"]);
+            setInvariantYValue(point["y"]);
+            setInvariantXValue(point["x"]);
             setSelected(true);
         } else {
             setSelected(false);
@@ -90,10 +90,12 @@ export default function PolytopeChart(props) {
     const RenderGraphs = () => {
         if (selected) {
             return <Graphs
-                invariantName={props.invariantName}
-                invariantValue={invariantValue}
+                graphPath={props.graphPath}
+                invariantXName={props.invariantName}
+                invariantXValue={invariantXValue}
                 numberVertices={props.numberVertices}
-                numberEdges={numberEdges}
+                invariantYName={props.invariantColor}
+                invariantYValue={invariantYValue}
             />;
         } else {
             return null;

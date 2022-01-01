@@ -42,16 +42,30 @@ export function readPoints(data, invariantX, coloration) {
     // "chi" --> Coloration
     // "mult" --> Coloration
 
+    console.debug(data);
+
+    const keys = Object.keys(data);
     const pointsGrouped = {};
-    for (let i in data) {
-        let xVal = data[i][invariantX];
-        let yVal = data[i]["m"]; //TODO A modifier
-        let color = data[i][coloration];
-        if (pointsGrouped[color] == null) {
-            pointsGrouped[color] = [];
+
+    const xName = keys[0];
+    const yName = keys[1];
+    const colorName = keys[2];
+    // Additional value for diameter ?
+
+    const invariants_length = data[keys[0]].length; // Assume all invariants have the same length
+
+    for (let i = 0; i<invariants_length; i++) {
+        const datapoint = {};
+        const xValue = data[xName][i];
+        const yValue = data[yName][i];
+        const colorValue = data[colorName][i];
+
+        if (pointsGrouped[colorValue] == null) {
+            pointsGrouped[colorValue] = [];
         }
-        pointsGrouped[color].push({x: xVal, y: yVal, r: 5});
+        pointsGrouped[colorValue].push({x: xValue, y: yValue, r: 5});
     }
+
     let result = [];
     const groupsKeys = Object.keys(pointsGrouped).map(x => parseInt(x)).sort((a, b) => a >= b);
     const min = groupsKeys[0];

@@ -25,9 +25,9 @@ export default function PolytopeChart(props) {
             // First fetch the envelopes
             const envelope = await fetch(envelope_request.toString())
                 .then(response => response.json())
-                .then(data => {
+                .then(json => {
                     console.debug("Fetched", envelope_request.toString());
-                    return readEnvelope(data);
+                    return readEnvelope(json);
                 });
 
             let points_request = new URL(`http://localhost:8080${graphPath}/points`);
@@ -39,9 +39,9 @@ export default function PolytopeChart(props) {
             // then fetch the points
             const points = await fetch(points_request.toString())
                 .then(response => response.json())
-                .then(data => {
+                .then(json => {
                     console.debug("Fetched", points_request.toString());
-                    return readPoints(data);
+                    return readPoints(json);
                 });
 
             points.push({type: 'line', label: "Envelope", borderColor: "0xFFFFFF", data: envelope});

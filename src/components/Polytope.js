@@ -97,6 +97,7 @@ export default function Polytope(props) {
             </form>
             {!!endpoint &&
                 <Form
+                    formData={formResults}
                     schema={endpoint.value.params}
                     uiSchema={uiSchema}
                     onChange={onFormChange}

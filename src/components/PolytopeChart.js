@@ -1,6 +1,7 @@
 import {readEnvelope, readPoints} from "../core/ParseFiles";
 import React, {useEffect, useState} from "react";
 import {Bubble} from "react-chartjs-2";
+import {stringify} from 'qs';
 import 'chartjs-plugin-zoom';
 import Graphs from "./Graphs";
 
@@ -16,9 +17,13 @@ export default function PolytopeChart(props) {
     useEffect( async () => {
             const graphPath = props.graphPath.value.path;
             let envelope_request = new URL(`http://localhost:8080${graphPath}/polytope`);
-            envelope_request.searchParams.append("max_graph_size", props.numberVertices);
-            envelope_request.searchParams.append("invariants", props.invariantName);
-            envelope_request.searchParams.append("invariants", props.invariantColor);
+            envelope_request += "?" + stringify({
+                max_graph_size: props.numberVertices,
+                invariants: [
+                    props.invariantName,
+                    props.invariantColor
+                ]
+            })
             console.debug("Fetching", envelope_request.toString());
 
 
@@ -31,9 +36,13 @@ export default function PolytopeChart(props) {
                 });
 
             let points_request = new URL(`http://localhost:8080${graphPath}/points`);
-            points_request.searchParams.append("max_graph_size", props.numberVertices);
-            points_request.searchParams.append("invariants", props.invariantName);
-            points_request.searchParams.append("invariants", props.invariantColor);
+            points_request += "?" + stringify({
+                max_graph_size: props.numberVertices,
+                invariants: [
+                    props.invariantName,
+                    props.invariantColor
+                ]
+            })
             console.debug("Fetching", points_request.toString());
 
             // then fetch the points

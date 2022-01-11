@@ -54,10 +54,10 @@ export default function Polytope(props) {
         console.log("Rendering Polytope with parameters: " + form_values);
         if (submit && formResults) {
             const max_graph_size = formResults.max_graph_size
-            const x = formResults.invariants[0];
-            const y = formResults.invariants[1];
-            return <PolytopeChart graphPath={endpoint} invariantName={x} numberVertices={max_graph_size}
-                                  invariantColor={y}/>;
+            const [x_name, x_val] = [formResults.invariants[0].name, formResults.invariants[0].value];
+            const [y_name, y_val] = [formResults.invariants[1].name, formResults.invariants[1].value];
+            return <PolytopeChart graphPath={endpoint} invariantName={formResults.invariants[0]} numberVertices={max_graph_size}
+                                  invariantColor={formResults.invariants[1]}/>;
         } else {
             return null;
         }
@@ -103,11 +103,6 @@ export default function Polytope(props) {
                     onChange={onFormChange}
                     onSubmit={onFormSubmit}
                     onError={console.log("errors")}/>
-            }
-            {
-                //<form>
-                //    <RenderMultipleQuestions/>
-                //</form>
             }
             <button onClick={clickSubmit}> Soumettre</button>
             <RenderPolytopeChart/>

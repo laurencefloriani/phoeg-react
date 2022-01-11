@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { readGraph } from "../core/ParseFiles";
 import GraphSlider from "./GraphSlider";
+import {stringify} from "qs";
 
 export default function Graphs(props) {
     const [graphlist, setGraphList] = useState(["@"]); // La liste des graphes correspondant aux critères
@@ -9,6 +10,13 @@ export default function Graphs(props) {
     useEffect( () => {
         const graphPath = props.graphPath.value.path;
         let graphs_request = new URL(`http://localhost:8080${graphPath}`);
+        graphs_request += '?' + stringify({
+            max_graph_size: props.numberVertices,
+            invariants: [
+                props.invariantXName,
+                props.invariantYValue
+            ]
+        })
         graphs_request.searchParams.append("max_graph_size", props.numberVertices);
         graphs_request.searchParams.append("invariants", props.invariantXName);
         graphs_request.searchParams.append("invariants", props.invariantYName);

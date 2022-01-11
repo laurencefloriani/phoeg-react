@@ -9,30 +9,26 @@ export default function Graphs(props) {
 
     useEffect( () => {
         const graphPath = props.graphPath.value.path;
-        let graphs_request = new URL(`http://localhost:8080${graphPath}`);
-        graphs_request += '?' + stringify({
-            max_graph_size: props.numberVertices,
-            invariants: [
-                props.invariantXName,
-                props.invariantYValue
-            ]
-        })
+        let graphs_request = new URL(`http://localhost:8080${graphPath}`)
+
         graphs_request.searchParams.append("max_graph_size", props.numberVertices);
-        graphs_request.searchParams.append("invariants", props.invariantXName);
-        graphs_request.searchParams.append("invariants", props.invariantYName);
+
+        graphs_request.searchParams.append("invariants[0][name]", props.invariantXName.name);
+        graphs_request.searchParams.append("invariants[1][name]", props.invariantYName.name);
 
         // Filter for specific invariant values
-        graphs_request.searchParams.append(props.invariantXName, props.invariantXValue);
-        graphs_request.searchParams.append(props.invariantYName, props.invariantYValue);
+        graphs_request.searchParams.append("invariants[0][value]", props.invariantXValue);
+        graphs_request.searchParams.append("invariants[1][value]", props.invariantYValue);
 
-        let pathGraph = "assets/data_" + props.invariantXName + "/graphes/graphes-" + props.numberVertices + ".json";
         fetch(graphs_request.toString(), {headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}})
             .then(function (response) {
                 return response.json();
             })
             .then(function (myJson) {
                 // let temp = readGraph(myJson, props.numberEdges, props.invariantXName, props.invariantValue);
+                console.log(myJson)
                 let temp = myJson.sig; // Get the list of signatures
+                console.log("temp: " + temp);
                 if (temp !== null) {
                     setGraphList(temp);
                     setComputedList(true);
@@ -44,11 +40,18 @@ export default function Graphs(props) {
 
     const RenderGraphSlider = () => {
         if (computedList) {
+            console.log(computedList);
             return <GraphSlider graphList={graphlist}/>;
         } else {
             return null;
         }
     }
+
+    return (
+        <div className="graphs">
+            <RenderGraphSlider />
+        </div>
+    )
 
     return (
         <div className="graphs">

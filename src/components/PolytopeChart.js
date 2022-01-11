@@ -24,14 +24,11 @@ export default function PolytopeChart(props) {
                     props.invariantColor
                 ]
             })
-            console.debug("Fetching", envelope_request.toString());
-
 
             // First fetch the envelopes
             const envelope = await fetch(envelope_request.toString())
                 .then(response => response.json())
                 .then(json => {
-                    console.debug("Fetched", envelope_request.toString());
                     return readEnvelope(json);
                 });
 
@@ -43,13 +40,11 @@ export default function PolytopeChart(props) {
                     props.invariantColor
                 ]
             })
-            console.debug("Fetching", points_request.toString());
 
             // then fetch the points
             const points = await fetch(points_request.toString())
                 .then(response => response.json())
                 .then(json => {
-                    console.debug("Fetched", points_request.toString());
                     return readPoints(json);
                 });
 
